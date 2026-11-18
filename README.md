@@ -23,31 +23,31 @@ The bullets follow the pipeline order: foundation models first, then feature ext
 
 ## Generating Feature Files
 
-The `data/` directory is populated by the two feature-extraction scripts. Each script walks an image directory (all subdirectories are scanned) and writes one pickle per split and feature mode. The OCT2017 4-class layout works out of the box: file names start with the class name (`CNV-...jpeg`, `DME-...jpeg`, `DRUSEN-...jpeg`, `NORMAL-...jpeg`), which is how `infer.py` recovers the ground-truth class.
+Each script walks an image directory (any depth below it is scanned) and writes one pickle per split and feature mode.
 
 ```bash
-# data/dinov2_vitl14_features_test_multi_layer.pkl
+# writes data/dinov2_vitl14_features_test_multi_layer.pkl
 python get_dinov2_feature.py ^
+  --images "path\to\images" ^
   --split test ^
-  --mode multi_layer ^
-  --images "path\to\split"
+  --mode multi_layer
 
-# data/dinov3_features_test_multi_layer.pkl
+# writes data/dinov3_features_test_multi_layer.pkl
 python get_dinov3_feature.py ^
+  --images "path\to\images" ^
   --split test ^
   --mode multi_layer ^
-  --model "./models/dinov3-vitl16-pretrain-lvd1689m" ^
-  --images "path\to\split"
+  --model "path\to\dinov3-vitl16-pretrain-lvd1689m"
 ```
 
-`--images` is the directory that holds the images of one split (any depth below it is scanned).
-
-- `--mode last_layer` stores the final `CLS` feature; `--mode multi_layer` concatenates the `CLS` features of layers 12, 18 and 24 (3x the feature dimension).
-- Images are resized to 224x224 with bicubic interpolation and normalized with the ImageNet statistics.
-- File names are stored exactly as found on disk, so `infer.py` can parse the class from the name prefix (`--labels` controls the label list).
-- `--limit N` processes only the first N images, which is handy for a quick sanity check.
-- DINOv2 loads through `torch.hub` and falls back to `transformers` (`--backend transformers` forces the fallback). DINOv3 loads through `transformers` and needs a recent release.
-- The output file is named `data/<model>_features_<split>_<mode>.pkl`, matching the paths used by `infer.py`.
+- `--images` (required) is the directory of one split; image files are found recursively.
+- `--split` only tags the output file name (`test` or `train`); it does not select the directory.
+- `--mode last_layer` stores the final `CLS` feature. `--mode multi_layer` concatenates the `CLS` features of layers 12, 18 and 24, three times the feature dimension.
+- DINOv2 input is resized to 224x224 with bicubic interpolation and ImageNet normalization; DINOv3 input goes through its Hugging Face image processor.
+- File names are stored as found on disk, so `infer.py` recovers the class from a prefix such as `CNV-` (default `--labels`: CNV, DME, DRUSEN, NORMAL; the OCT2017 split names already follow this).
+- DINOv2 loads through `torch.hub`, falling back to `transformers` (`--backend transformers` forces the fallback). DINOv3 loads through `transformers`, which must support the `dinov3` architecture; `--model` accepts a local directory or a Hugging Face model id.
+- `--limit N` extracts only the first N images (in path order), which is handy for a quick sanity check.
+- The output lands in `data/` next to the scripts as `<model>_features_<split>_<mode>.pkl`; an existing file with the same name is overwritten (`--output` overrides the path).
 
 ## Feature File Format
 
