@@ -1,0 +1,16 @@
+numpy
+scikit-learn
+
+# Feature extraction (get_dinov2_feature.py / get_dinov3_feature.py).
+# DINOv2 loads through torch.hub (facebookresearch/dinov2) with a
+# transformers (facebook/dinov2-large) fallback.
+# DINOv3 loads through transformers, which must be new enough to know the
+# `dinov3` architecture (use `pip install -U transformers` if the model id is
+# reported as unsupported).
+torch
+torchvision
+pillow
+transformers
+# Optional: lets DINOv3 use device_map='auto'; the scripts fall back to a
+# single device when accelerate is missing.
+accelerate
